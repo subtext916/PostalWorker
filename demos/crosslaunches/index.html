@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Demo - Multiple Iframes Support</title>
+    <script src="../../dist/PostalWorker.min.js?PostalRoute=../../dist/"></script>
+    <script>
+      let postal = window.PostalWorker();
+      const windows = [];
+      const msgClass = "crossLaunch";
+      function crossLaunchWindow() {
+        const callback = msg => {
+          console.info(msg);
+        };
+        const winName = "demoWindow" + Date.now();
+        let url = document.querySelector("input#url").value;
+        postal.crossOn(msgClass, callback, url, winName, {
+          width: 500,
+          height: 400
+        });
+        windows.push({ name: winName, url: url });
+      }
+      function fireDemoMessage() {
+        postal.crossFire(msgClass, "Hello!");
+      }
+      // close opened windows when leaving page
+      window.onbeforeunload = () => {
+        windows.forEach(win => {
+          postal.unCross(msgClass, win.url);
+        });
+      };
+    </script>
+  </head>
+  <body>
+    <a href="../../">&lt;&lt; Back</a>
+    <div style="padding: 20px">
+      <h1>Demonstration of Cross Launching Windows</h1>
+      <input
+        type="text"
+        id="url"
+        value="http://192.168.101.17:8080/demos/crosslaunches/popup.html"
+      />
+      <button onclick="crossLaunchWindow()">Open Window</button>
+    </div>
+    <div><button onclick="fireDemoMessage()">Send Hello Message</button></div>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo - Multiple Iframes Support</title>
+    <script src="../../dist/PostalWorker.min.js?PostalRoute=../../dist/"></script>
+    <style>
+        #demo {
+            padding-bottom: 25px;
+        }
+        #demoView {
+            max-height: 400px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+<a href="../../">&lt;&lt; Back</a>
+<h1>Demonstration of Multiple Iframe Support In PostalWorker</h1>
+<iframe src="./frame.html"></iframe>
+<iframe src="./frame.html"></iframe>
+
+<div id="demo"></div>
+
+
+
+<div id="demoView"></div>
+<script src="../../dist/demo.multipleiframes.js" defer></script>
+</body>
+</html>

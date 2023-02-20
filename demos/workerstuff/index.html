@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Demo - Multiple Iframes Support</title>
+    <script src="../../dist/PostalWorker.min.js?PostalRoute=../../dist/"></script>
+    <script>
+      const postal = window.PostalWorker();
+      postal.load("/demos/workerstuff/worker.js");
+      // Define demo web components
+      // Worker Status boxes
+      class WorkerStatus extends HTMLElement {
+        constructor() {
+          super();
+
+          this._shadowRoot = this.attachShadow({ mode: "open" });
+          this._shadowRoot.innerHTML = `
+              <style>
+                div {
+                  display: inline;
+                  border: solid 1px #333;
+                  border-radius: 10%;
+                  padding: 4px;
+                  font-size: 20px;
+                  font-weight: bold;
+                  cursor: pointer;
+                }
+              </style>
+              <div id="status"> * </div>
+            `;
+        }
+
+        update(value) {
+          this._shadowRoot.querySelector("#status").innerHTML = value;
+        }
+        hover(state) {
+          if (state)
+            this._shadowRoot.querySelector("#status").style.background = "#ccc";
+          else
+            this._shadowRoot.querySelector("#status").style.background = "#fff";
+        }
+      }
+      customElements.define("worker-status", WorkerStatus);
+
+      // PostBox Text box
+      class PostBoxText extends HTMLElement {
+        constructor() {
+          super();
+          this._shadowRoot = this.attachShadow({ mode: "open" });
+          const input = document.createElement("input");
+          this._shadowRoot.appendChild(input);
+          input.addEventListener("change", event => {
+            const box = this.id;
+            postal.post(box, event.target.value);
+          });
+        }
+        update(value) {
+          const input = this._shadowRoot.querySelector("input");
+          input.value = value;
+        }
+        disable() {
+          const input = this._shadowRoot.querySelector("input");
+          input.disabled = true;
+        }
+        enable() {
+          const input = this._shadowRoot.querySelector("input");
+          input.disabled = false;
+        }
+        focus() {
+          const input = this._shadowRoot.querySelector("input");
+          input.focus();
+        }
+      }
+      customElements.define("postbox-text", PostBoxText);
+
+      // Store
+      class StoreExample extends HTMLElement {
+        constructor() {
+          super();
+          this._shadowRoot = this.attachShadow({ mode: "open" });
+          const pre = document.createElement("pre");
+          this._shadowRoot.appendChild(pre);
+        }
+        update(store) {
+          const pre = this._shadowRoot.querySelector("pre");
+          pre.innerHTML = `<code>${JSON.stringify(store)}</code>`;
+        }
+      }
+      customElements.define("store-example", StoreExample);
+
+      // Subscribe for client-side postal messages
+      postal.on("demoAttribute", msg => {
+        document.querySelector("worker-status").update(msg);
+      });
+      postal.on("demoNotification", msg => {
+        document
+          .querySelectorAll("worker-status")[1]
+          .update(`Random notif #: ${msg}`);
+      });
+
+      //
+    </script>
+    <style>
+      #demo {
+        padding-bottom: 25px;
+      }
+      #demoView {
+        max-height: 400px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="../../">&lt;&lt; Back</a>
+    <h1>Demonstration of SharedWorker</h1>
+    <p>To enable notifications, use:</p>
+    <code style="font-weight: bold"> npm run dev </code>
+    <br />
+    <p>
+      To inspect worker use: DevTool (Chrome):
+      <a href="chrome://inspect/#workers">chrome://inspect/#workers</a>
+    </p>
+    <div style="margin-top: 20px">
+      <worker-status
+        intro="Click me to get started!"
+        title="This component updates a shared attribute int he worker by clicking it"
+      ></worker-status>
+      <worker-status
+        intro="Waiting for notification..."
+        title="This component displays messages from a notification stream"
+      ></worker-status>
+    </div>
+    <div id="demo"></div>
+    Box1: <postbox-text id="box1"></postbox-text>
+    <br />
+    Box2: <postbox-text id="box2"></postbox-text>
+    <br />
+    Box3: <postbox-text id="box3"></postbox-text>
+    <button id="box3Enabler">Enable</button>
+    <store-example></store-example>
+    <!-- <img src="../../postalworker2.png" /> -->
+    <img src="./loading-gif.gif" id="cacheImage" />
+    <div id="demoView"></div>
+  </body>
+  <script>
+    // Set default text to display in component
+    document.querySelectorAll("worker-status").forEach(component => {
+      component.update(component.getAttribute("intro"));
+    });
+
+    // Assign click handler to 1st component
+    document.querySelector("worker-status").addEventListener("click", () => {
+      postal.fire("demoUpdate");
+    });
+
+    // Assign mouseover/out handlers to 2nd component
+    const component2 = document.querySelectorAll("worker-status")[1];
+    postal.on("hover", msg => {
+      component2.hover(msg);
+    });
+    component2.addEventListener("mouseover", () => {
+      postal.fire("mouseover");
+    });
+    component2.addEventListener("mouseout", () => {
+      postal.fire("mouseout");
+    });
+    postal.fire("demoSubscribe");
+
+    // Connect postbox-text component to postBox
+    postal.postBox("box1", msg => {
+      const { address, value, box } = msg;
+      document.querySelector("postbox-text#box1").update(value);
+      document.querySelector("store-example").update(box);
+    });
+    postal.postBox("box2", msg => {
+      const { address, value, box } = msg;
+      document.querySelector("postbox-text#box2").update(value);
+      document.querySelector("store-example").update(box);
+    });
+
+    // Add button handler
+    const enabler = document.querySelector("button");
+    const poxBox3 = document.querySelector("postbox-text#box3");
+    poxBox3.disable();
+    enabler.addEventListener("click", event => {
+      event.target.innerHTML =
+        event.target.innerHTML === "Enable" ? "Disable" : "Enable";
+      if (event.target.innerHTML !== "Enable") {
+        // Enable
+        poxBox3.enable();
+        poxBox3.focus();
+        postal.postBox("box3", msg => {
+          const { address, value, box } = msg;
+          poxBox3.update(value);
+          document.querySelector("store-example").update(box);
+        });
+      } else {
+        postal.closeBox("box3");
+        poxBox3.disable();
+      }
+    });
+
+    // Demo package handling
+    postal.package("package", content => {
+      document.querySelector("#cacheImage").src = content.content;
+    });
+    postal.pack("package", "../../postalworker2.png");
+    // setTimeout(() => {
+    //   window.PostalWorker().pack("package", "../../postalworker2.png");
+    // }, 1000);
+  </script>
+</html>

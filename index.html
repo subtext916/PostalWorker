@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PostalWorker Window Messaging Event Bus System</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Limelight|Source+Code+Pro|Tinos"
+      rel="stylesheet"
+    />
+
+    <script src="dist/PostalWorker.min.js?PostalRoute=dist/"></script>
+    <style>
+      h1 {
+        width: 100%;
+        height: 200px;
+        text-indent: 150px;
+        font-family: "Limelight", cursive;
+        font-weight: normal;
+        background-image: url("postalworker2.png");
+        background-repeat: no-repeat;
+      }
+      h2 {
+        position: absolute;
+        top: 85px;
+        left: 185px;
+        font-family: "Source Code Pro", monospace;
+        font-weight: normal;
+      }
+      h3 {
+        text-indent: 40px;
+        font-family: "Tinos", serif;
+      }
+      h4 {
+        text-indent: 40px;
+        font-family: "Tinos", serif;
+      }
+      ul {
+        position: absolute;
+        top: 150px;
+        right: 20px;
+      }
+      ul:before {
+        content: attr(aria-label);
+        font-size: 120%;
+        font-weight: bold;
+        margin-left: -15px;
+      }
+      p {
+        margin: 0 40px;
+        font-family: "Tinos", serif;
+      }
+      ol {
+        margin-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>POSTAL WORKER</h1>
+    <h2>Window Messaging Event Bus System</h2>
+    <h3>Created by: Russ Stratfull</h3>
+    <h4>Contributors: Sakshi Dheer, & François Wauquier</h4>
+    <ul aria-label="Demos:">
+      <li><a href="./demos/multipleiframes">Multiple Iframes</a></li>
+      <li><a href="./demos/crosslaunches">Cross Launch Windows</a></li>
+      <li><a href="./demos/workerstuff/index.html">SharedWorker</a></li>
+    </ul>
+    <div id="about">
+      <p>
+        The PostalWorker is a universal window and thread messaging bus. It is
+        meant to provide a single, easy to use, set of functions to fascilitate
+        communication between various windows, iframes, and even worker threads.
+        Communication is done using
+        <a
+          href="https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage"
+          target="_blank"
+        >
+          window.postMessage </a
+        >.
+      </p>
+      <p>
+        In addition to messaging between windows and threads, it also spawns a
+        SharedWorker thread and establishes a broadcast channel to communicate
+        back and forth with it. Creating a second thread outside of the main
+        view provides several benefits for web application front ends:
+      </p>
+      <ol>
+        <li>Reduces the events running in the main event loop</li>
+        <li>
+          Allows multiple windows to share a single messaging queue,
+          establishing shared
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/API/EventSource"
+            target="_blank"
+            >Event Sources</a
+          >
+        </li>
+        <li>
+          Run computationally expensive operations outside of main event loop
+        </li>
+        <li>
+          Share state easily between all windows and threads without worrying
+          about object reference problems by creating "PO Boxes"
+        </li>
+      </ol>
+      <h4>Setup</h4>
+      <p>
+        PostalWorker can be used like a classic javascript library added to the
+        html document using the script tag, or it can be imported into a
+        javascript application as a module.
+      </p>
+      <p>
+        When added to the document using the script tag, an additional query
+        parameter is available to set the location of the SharedWorker code.<br />
+      </p>
+      <pre>
+        Example: (Notice the PostalSharedWorker.js file is in dist/)<br />
+        &lt;script src="dist/PostalWorker.min.js?PostalRoute=dist/"&gt;&lt;/script&gt;
+      </pre>
+    </div>
+    <div id="neighbours"></div>
+    <script>
+      const worker = window.PostalWorker(); // whoa... this is REQUIRED currently...
+      // worker.on("neighbours", (msg) => {
+      //   console.info("neighbours", msg);
+      // });
+      // worker.fire("neighbours", "hello");
+    </script>
+  </body>
+</html>
