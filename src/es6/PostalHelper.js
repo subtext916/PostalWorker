@@ -1,11 +1,11 @@
 /**
- * Public API methods for module
- * This is where all the methods which are attached to the prototype of the module are defined and configured
+ * Postal Helper defines the public API methods and creates window event handlers
+ * for the postal worker and add/remove internal postal subscriptions used by the library
  * @author: Russ Stratfull
  */
 import * as S from "./strings";
 
-export class PublicApi {
+export class PostalHelper {
   /**
    * Primary PostalWorker public methods
    * @param {*} module
@@ -186,7 +186,6 @@ export class PublicApi {
    */
   static registerClosure(module, add, collect) {
     const lastCollection = collect;
-    console.info(module);
     if (!module._getEvents().get(S.BOXCLOSED)) {
       module._on(S.BOXCLOSED, msg => {
         const mod = module;

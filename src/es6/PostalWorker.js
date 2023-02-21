@@ -8,7 +8,7 @@
 
 import * as S from "./strings";
 import Deprecated from "./Deprecated";
-import { PublicApi } from "./PublicApi";
+import { PostalHelper } from "./PostalHelper";
 
 let // Private registrations
   _config = false,
@@ -44,17 +44,17 @@ export class PostalWorker {
     _stringify = safeJsonStringify;
 
     // Public API
-    PublicApi.rootMethods(this);
-    PublicApi.utilityMethods(this);
+    PostalHelper.rootMethods(this);
+    PostalHelper.utilityMethods(this);
 
     // Attach global handlers
-    PublicApi.attachHandlers(this);
+    PostalHelper.attachHandlers(this);
 
     // Does this window have a parent?
     if (window.self !== window.top) {
       // If it does, include additional public methods and then register it
       // and let it know this window is ready to receive messages
-      PublicApi.backMethod(this);
+      PostalHelper.backMethod(this);
       _parentWindow = this._getSubscriber(document.referrer);
       this._backFire(S.CHILDREGISTER);
     }
@@ -62,7 +62,7 @@ export class PostalWorker {
     // Add event listener to incoming messages (from windows) and process with messageController
     window.addEventListener(S.MESSAGE, this._messageController);
     // Subscribe to internal message classes
-    PublicApi.internalSubscriptions(this);
+    PostalHelper.internalSubscriptions(this);
 
     // Resolve worker threading
     this._resolveWorker();
@@ -718,7 +718,7 @@ export class PostalWorker {
       _channel.postMessage(msg);
     }
     if (!_POboxes.size) {
-      PublicApi.registerCollection(this);
+      PostalHelper.registerCollection(this);
     }
 
     if (!_POboxes.get(address)) {
@@ -733,7 +733,7 @@ export class PostalWorker {
    */
   _closeBox(address) {
     const fn = _POboxes.get(address);
-    PublicApi.registerClosure(this, address, fn);
+    PostalHelper.registerClosure(this, address, fn);
 
     _POboxes.delete(address);
     _channel.postMessage(
@@ -801,7 +801,7 @@ export class PostalWorker {
     }
     _POboxes.delete(address);
     if (!_closures.size && !_POboxes.size) {
-      PublicApi.unregisterCollection(this);
+      PostalHelper.unregisterCollection(this);
     }
   }
 
@@ -823,7 +823,7 @@ export class PostalWorker {
       _channel.postMessage(msg);
     }
     if (!_packages.size) {
-      PublicApi.registerDelivery(this);
+      PostalHelper.registerDelivery(this);
     }
 
     if (!_packages.get(address)) {
