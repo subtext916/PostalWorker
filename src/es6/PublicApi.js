@@ -186,7 +186,8 @@ export class PublicApi {
    */
   static registerClosure(module, add, collect) {
     const lastCollection = collect;
-    if (!module.getEvents().get(S.BOXCLOSED)) {
+    console.info(module);
+    if (!module._getEvents().get(S.BOXCLOSED)) {
       module._on(S.BOXCLOSED, msg => {
         const mod = module;
         mod._clearBox(msg);
