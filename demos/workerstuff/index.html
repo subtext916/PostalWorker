@@ -131,12 +131,13 @@
       ></worker-status>
     </div>
     <div id="demo"></div>
-    Box1: <postbox-text id="box1"></postbox-text>
+    PostBox Items:<br />
+    Item1: <postbox-text id="item1"></postbox-text>
     <br />
-    Box2: <postbox-text id="box2"></postbox-text>
+    Item2: <postbox-text id="item2"></postbox-text>
     <br />
-    Box3: <postbox-text id="box3"></postbox-text>
-    <button id="box3Enabler">Enable</button>
+    Item3: <postbox-text id="item3"></postbox-text>
+    <button id="item3Enabler">Enable</button>
     <store-example></store-example>
     <!-- <img src="../../postalworker2.png" /> -->
     <img src="./loading-gif.gif" id="cacheImage" />
@@ -167,36 +168,36 @@
     postal.fire("demoSubscribe");
 
     // Connect postbox-text component to postBox
-    postal.postBox("box1", msg => {
+    postal.postBox("item1", msg => {
       const { address, value, box } = msg;
-      document.querySelector("postbox-text#box1").update(value);
+      document.querySelector("postbox-text#item1").update(value);
       document.querySelector("store-example").update(box);
     });
-    postal.postBox("box2", msg => {
+    postal.postBox("item2", msg => {
       const { address, value, box } = msg;
-      document.querySelector("postbox-text#box2").update(value);
+      document.querySelector("postbox-text#item2").update(value);
       document.querySelector("store-example").update(box);
     });
 
     // Add button handler
     const enabler = document.querySelector("button");
-    const poxBox3 = document.querySelector("postbox-text#box3");
-    poxBox3.disable();
+    const poxitem3 = document.querySelector("postbox-text#item3");
+    poxitem3.disable();
     enabler.addEventListener("click", event => {
       event.target.innerHTML =
         event.target.innerHTML === "Enable" ? "Disable" : "Enable";
       if (event.target.innerHTML !== "Enable") {
         // Enable
-        poxBox3.enable();
-        poxBox3.focus();
-        postal.postBox("box3", msg => {
+        poxitem3.enable();
+        poxitem3.focus();
+        postal.postBox("item3", msg => {
           const { address, value, box } = msg;
-          poxBox3.update(value);
+          poxitem3.update(value);
           document.querySelector("store-example").update(box);
         });
       } else {
-        postal.closeBox("box3");
-        poxBox3.disable();
+        postal.closeBox("item3");
+        poxitem3.disable();
       }
     });
 
