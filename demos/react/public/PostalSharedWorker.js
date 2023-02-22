@@ -1,3 +1,94 @@
+(function () {
+'use strict';
+
+/**
+ * PostalWorker String Constants
+ * @type {string}
+ */
+const POSTAL_WORKER = "PostalWorker";
+const POSTAL_SHARED_WORKER = "PostalSharedWorker";
+const FIRE = "FIRE";
+const WORKERREGISTER = "WORKERREGISTER";
+const REGISTERID = "REGISTERID";
+const UNREGISTERID = "UNREGISTERID";
+const LOAD = "LOAD";
+const POBOX = "POBOX";
+const POST = "POST";
+const COLLECT = "COLLECT";
+const CLOSEBOX = "CLOSEBOX";
+const BOXCLOSED = "BOXCLOSED";
+const PACKAGE = "PACKAGE";
+const PACK = "PACK";
+const DELIVERY = "DELIVERY";
+
+var hasProp = Object.prototype.hasOwnProperty;
+
+function throwsMessage(err) {
+	return '[Throws: ' + (err ? err.message : '?') + ']';
+}
+
+function safeGetValueFromPropertyOnObject(obj, property) {
+	if (hasProp.call(obj, property)) {
+		try {
+			return obj[property];
+		}
+		catch (err) {
+			return throwsMessage(err);
+		}
+	}
+
+	return obj[property];
+}
+
+function ensureProperties(obj) {
+	var seen = [ ]; // store references to objects we have seen before
+
+	function visit(obj) {
+		if (obj === null || typeof obj !== 'object') {
+			return obj;
+		}
+
+		if (seen.indexOf(obj) !== -1) {
+			return '[Circular]';
+		}
+		seen.push(obj);
+
+		if (typeof obj.toJSON === 'function') {
+			try {
+				var fResult = visit(obj.toJSON());
+				seen.pop();
+				return fResult;
+			} catch(err) {
+				return throwsMessage(err);
+			}
+		}
+
+		if (Array.isArray(obj)) {
+			var aResult = obj.map(visit);
+			seen.pop();
+			return aResult;
+		}
+
+		var result = Object.keys(obj).reduce(function(result, prop) {
+			// prevent faulty defined getter properties
+			result[prop] = visit(safeGetValueFromPropertyOnObject(obj, prop));
+			return result;
+		}, {});
+		seen.pop();
+		return result;
+	}
+
+	return visit(obj);
+}
+
+var index = function(data, replacer, space) {
+	return JSON.stringify(ensureProperties(data), replacer, space);
+};
+
+var ensureProperties_1 = ensureProperties;
+
+index.ensureProperties = ensureProperties_1;
+
 /**
  *  Postal Worker - Shared Worker Thread Engine
  *  @Description: Use web worker threading to fork threads and use postMessage to pass serialized data between threads and windows
@@ -5,15 +96,12 @@
  *  @Contributors: Sakshi Dheer, & Francois Wauquier
  */
 
-import * as S from "./strings";
-import safeJsonStringify from "safe-json-stringify";
-
 self._env = {
   _members: {},
-  _stringify: safeJsonStringify,
+  _stringify: index,
   _events: new Map(),
   _scripts: new Map(),
-  _channel: new BroadcastChannel(S.POSTAL_WORKER),
+  _channel: new BroadcastChannel(POSTAL_WORKER),
   _subscriptions: new Map(),
   _postBoxes: {},
   _packages: {}
@@ -90,7 +178,7 @@ function _registerPObox(msg) {
     return store;
   }, {});
 
-  self.PostalWorker().fire(S.COLLECT, {
+  self.PostalWorker().fire(COLLECT, {
     address: address,
     value: self._env._postBoxes[address].value,
     box
@@ -110,7 +198,7 @@ function _postBox(msg) {
     store[current[0]] = current[1].value;
     return store;
   }, {});
-  self.PostalWorker().fire(S.COLLECT, { address, value, box });
+  self.PostalWorker().fire(COLLECT, { address, value, box });
 }
 
 function _closeBox(msg) {
@@ -129,7 +217,7 @@ function _closeBox(msg) {
       },
       {}
     );
-    self.PostalWorker().fire(S.BOXCLOSED, { id, address, value, box });
+    self.PostalWorker().fire(BOXCLOSED, { id, address, value, box });
   }
 }
 
@@ -159,7 +247,7 @@ function _pack(msg) {
   let addr = self._env._packages[address];
   if (addr) addr.content = content;
 
-  self.PostalWorker().fire(S.DELIVERY, { address, content });
+  self.PostalWorker().fire(DELIVERY, { address, content });
 }
 
 /**
@@ -171,33 +259,33 @@ function _processChannelMessage(msg) {
   if (!msg.postal) return;
   // console.info(msg);
   switch (msg.type) {
-    case S.FIRE:
+    case FIRE:
       if (self._env._events.has(msg.data.msgClass)) {
         self._env._events.get(msg.data.msgClass)(msg.data.message, msg.id);
       }
       break;
-    case S.LOAD:
+    case LOAD:
       _loadLibrary(msg);
       break;
-    case S.REGISTERID:
+    case REGISTERID:
       _addNode(msg);
       break;
-    case S.UNREGISTERID:
+    case UNREGISTERID:
       _removeNode(msg);
       break;
-    case S.POBOX:
+    case POBOX:
       _registerPObox(msg);
       break;
-    case S.POST:
+    case POST:
       _postBox(msg);
       break;
-    case S.CLOSEBOX:
+    case CLOSEBOX:
       _closeBox(msg);
       break;
-    case S.PACKAGE:
+    case PACKAGE:
       _preparePackage(msg);
       break;
-    case S.PACK:
+    case PACK:
       _pack(msg);
   }
 }
@@ -229,8 +317,8 @@ self.PostalWorker = () => ({
     self._env._channel.postMessage(
       self._env._stringify({
         postal: true,
-        type: S.FIRE,
-        id: S.POSTAL_SHARED_WORKER,
+        type: FIRE,
+        id: POSTAL_SHARED_WORKER,
         data: {
           msgClass: msgClass,
           message: msg
@@ -298,7 +386,7 @@ onconnect = () => {
   self._env._channel.postMessage(
     self._env._stringify({
       postal: true,
-      type: S.WORKERREGISTER
+      type: WORKERREGISTER
     })
   );
 };
@@ -458,3 +546,5 @@ onconnect = () => {
 //       self.PostalWorker.channel.postMessage(notification);
 //   }
 // }
+
+}());

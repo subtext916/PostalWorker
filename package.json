@@ -20,6 +20,7 @@
     "_demo-multipleiframes": "rollup -c ./demos/multipleiframes/demo.multipleiframes.rollup.js",
     "_demo-ie11": "rollup -c ./demos/IE11/demo.ie11.rollup.js",
     "_demo-workerstuff": "rollup -c ./demos/workerstuff/rollupconfig.js",
+    "_demo-react": "cp dist/PostalWorker.es.js demos/react/src/ && cp dist/PostalSharedWorker.js demos/react/public/",
     "release": "npm run build && npm run build-worker && npm run coverage && npm run doc && npm run demos",
     "dev": "nodemon server.js"
   },

@@ -8,3 +8,4 @@ npm-debug.log
 dev/**
 /.nyc_output
 /coverage
+/demos/react/node_modules

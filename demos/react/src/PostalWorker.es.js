@@ -1,4 +1,281 @@
 /**
+ * PostalWorker String Constants
+ * @type {string}
+ */
+const POSTAL_WORKER = "PostalWorker";
+const POSTAL_SHARED_WORKER = "PostalSharedWorker";
+const ON = "ON";
+const UN = "UN";
+const FIRE = "FIRE";
+const CROSSFIRE = "CROSSFIRE";
+const BACKFIRE = "BACKFIRE";
+const CHILDREGISTER = "CHILDREGISTER";
+const WORKERREGISTER = "WORKERREGISTER";
+const REGISTERID = "REGISTERID";
+const UNREGISTERID = "UNREGISTERID";
+const BROADCASTNODE = "BROADCASTNODE";
+const CROSSNODE = "CROSSNODE";
+const ERROR = "ERROR";
+const MESSAGE = "message";
+const SCRIPT = "script";
+const JS = "js";
+const LOAD = "LOAD";
+const RESPONSE = "RESPONSE";
+const SET_ADDRESS = "SET_ADDRESS";
+const CONNECT = "CONNECT";
+const DISCONNECT = "DISCONNECT";
+const POBOX = "POBOX";
+const POST = "POST";
+const COLLECT = "COLLECT";
+const CLOSEBOX = "CLOSEBOX";
+const BOXCLOSED = "BOXCLOSED";
+const PACKAGE = "PACKAGE";
+const PACK = "PACK";
+const DELIVERY = "DELIVERY";
+const _BLANK = "_blank";
+
+class Deprecated {
+
+    static registerWorker(worker, OK, events, address) {
+        worker.port.onmessage = (event) => {
+            
+            // Handle messages sent from worker by type
+            switch (event.data.type) {
+                case FIRE: // If the legacy messaging is used, it will still work here
+                    // Send the message
+                    if (event.data.data.msgClass &&
+                        events.get(event.data.data.msgClass)) {
+                        events.get(event.data.data.msgClass)(event.data.data.message);
+                    }
+                    // Let worker know message was received
+                    event.currentTarget.postMessage(OK);
+                    break;
+                case SET_ADDRESS: {
+                    Deprecated.address = event.data.data;
+                    break;
+                }
+                case ERROR:
+                    console.error(event.data.data);
+                    break;
+                default: console.warn(event);
+            }
+        };
+    }
+}
+
+/**
+ * Postal Helper defines the public API methods and creates window event handlers
+ * for the postal worker and add/remove internal postal subscriptions used by the library
+ * @author: Russ Stratfull
+ */
+class PostalHelper {
+  /**
+   * Primary PostalWorker public methods
+   * @param {*} module
+   */
+  static rootMethods(module) {
+    module.on = (msgClass, action) => module._on(msgClass, action);
+    module.on.example = `PostalWorker().on('example', (msg) => console.info(msg))`;
+
+    module.un = msgClass => module._un(msgClass);
+    module.un.example = `PostalWorker().un('example')`;
+
+    module.fire = (msgClass, msg, audience) =>
+      module._fire(msgClass, msg, audience);
+    module.fire.example = `PostalWorker().fire('example', 'Hello world')`;
+
+    module.crossOn = (msgClass, action, subscriber, name, windowparams) =>
+      module._crossOn(msgClass, action, subscriber, name, windowparams);
+    module.crossOn.example = `PostalWorker().crossOn('example', (msg) => console.info(msg), 'http://example.com', 'Example Name', )`;
+
+    module.unCross = (msgClass, subscriber) =>
+      module._unCross(msgClass, subscriber);
+    module.unCross.example = `PostalWorker().unCross('example', 'http://example.com')`;
+
+    module.crossFire = (msgClass, msg) => module._crossFire(msgClass, msg);
+    module.crossFire.example = `PostalWorker().crossFire('example', 'message to all windows/tabs cross launched')`;
+
+    module.fireAll = (msgClass, msg) => module._fireAll(msgClass, msg);
+    module.fireAll.example = `PostalWorker().fireAll('example', 'message to ALL windows/tabs/workers')`;
+
+    module.load = library => module._load(library);
+    module.load.example = `PostalWorker().load('path/to/script.js')`;
+
+    module.postBox = (address, callback) => module._postBox(address, callback);
+    module.postBox.example = `PostalWorker().PObox('example', function(value) { console.log(value); })`;
+
+    module.post = (address, value) => module._post(address, value);
+    module.post.example = `PostalWorker().post('example', 'This is an example value')`;
+
+    module.closeBox = address => module._closeBox(address);
+    module.closeBox.example = `PostalWorker().closeBox("example")`;
+
+    module.package = (address, handling) => module._package(address, handling);
+    module.package.example = `PostalWorker().package('example', (todo) => {})`;
+
+    module.pack = (address, content) => module._pack(address, content);
+    module.pack.example = `PostalWorker().pack('example', 'url/of/file.jpg')`;
+  }
+
+  /**
+   * Special method added when script detects that the current window is an iframe
+   * @param {*} module
+   */
+  static backMethod(module) {
+    module.backFire = (msgClass, msg) => module._backFire(msgClass, msg);
+    module.backFire.example = `PostalWorker().backfire('example', 'Message to parent window')`;
+  }
+
+  /**
+   * Utility methods which in the future could maybe be removed from public access
+   * @param {*} module
+   */
+  static utilityMethods(module) {
+    // module.getAddress = () => module._getAddress();
+    // module.getAddress.example = `PostalWorker().getAddress()`;
+    // module.getPostalRoute = () => module._getPostalRoute();
+    // module.getPostalRoute.example = `PostalWorker().getPostalRoute()`;
+    // module.getCrossEvents = () => module._getCrossEvents();
+    // module.getCrossEvents.example = `PostalWorker().getCrossEvents()`;
+    // module.getEvents = () => module._getEvents();
+    // module.getEvents.example = `PostalWorker().getEvents()`;
+    // module.getSubscriber = url => module._getSubscriber(url);
+    // module.getSubscriber.example = `PostalWorker().getSubscriber('http://example.com')`;
+    // module.getSubscriptions = () => module._getSubscriptions();
+    // module.getSubscriptions.example = `PostalWorker().getSubscriptions()`;
+    // module.getWindows = () => module._getWindows();
+    // module.getWindows.example = `PostalWorker().getWindows()`;
+    // module.getWindowsBySubscriber = subscriber =>
+    //   module._getWindowsBySubscriber(subscriber);
+    // module.getWindowsBySubscriber.example = `PostalWorker().getWindowsBySubscriber('http://example.com')`;
+    // module.uniqueNumber = () => module._uniqueNumber();
+  }
+
+  /**
+   * Attach global window event handlers needed by PostalWorker
+   * @param {*} module
+   */
+  static attachHandlers(module) {
+    // Beforewindow unloads, announce disconnect to community
+    window.addEventListener("beforeunload", () => {
+      const mod = module;
+      mod._unmapFromBroadcastNetwork(mod.id);
+      mod._fireAll(DISCONNECT, {
+        id: mod.id,
+        subscriber: mod._getSubscriber(window.location.href)
+      });
+    });
+
+    // When window loads, announce connection to community
+    window.addEventListener("load", () => {
+      const mod = module;
+      mod._fireAll(CONNECT, {
+        id: mod.id,
+        subscriber: mod._getSubscriber(window.location.href)
+      });
+    });
+  }
+
+  /**
+   * Establish internal usage of PostalWorker to create connect, disconnect, msgClasses
+   * @param {*} module
+   */
+  static internalSubscriptions(module) {
+    // Connect
+    module._on(CONNECT, msg => {
+      // console.info("CONNECT", msg);
+      const mod = module;
+      mod._mapToBroadcastNetwork(msg.id);
+    });
+    module._crossOn(CONNECT, msg => {
+      // console.info("crossOn CONNECT", msg);
+      const mod = module;
+      let wins = mod._getOpeningWindows(); //.get(msg.subscriber);
+      let mapped = [];
+      if (wins) {
+        // wins.size should be 1 but todo: support multiple?
+        for (let [subscriber, win] of wins) {
+          mod._mapToWindow(msg.id, win, msg.subscriber);
+          mapped.push(subscriber);
+        }
+        for (let m of mapped) {
+          mod._getOpeningWindows().delete(m);
+        }
+      }
+    });
+
+    // Disconnect
+    module._on(DISCONNECT, msg => {
+      // console.info("DISCONNECT", msg);
+      const mod = module;
+      mod._unmapFromWindow(msg.id);
+    });
+    module._crossOn(DISCONNECT, msg => {
+      // console.info("crossOn: DISCONNECT", msg);
+      const mod = module;
+      mod._unmapFromWindow(msg.id);
+    });
+  }
+
+  /**
+   * Subscribe to postbox collection msgClass to get updates
+   * @param {*} module
+   */
+  static registerCollection(module) {
+    // let last;
+    module._on(COLLECT, msg => {
+      const mod = module;
+      // const serialized = JSON.stringify(msg);
+      //if (last !== serialized) {
+      mod._collectBox(msg);
+      // }
+      // last = serialized;
+    });
+  }
+
+  /**
+   * Unregister postbox collection msgClass
+   * @param {*} module
+   */
+  static unregisterCollection(module) {
+    module._un(COLLECT);
+  }
+
+  /**
+   * Register for temporary msgClass to get final update when postbox is being closed
+   * @param {*} module
+   * @param {*} add
+   * @param {*} collect
+   */
+  static registerClosure(module, add, collect) {
+    const lastCollection = collect;
+    if (!module._getEvents().get(BOXCLOSED)) {
+      module._on(BOXCLOSED, msg => {
+        const mod = module;
+        mod._clearBox(msg);
+
+        // todo: remove boxclosed subscription if not needed anymore
+        // mod._un(S.BOXCLOSED);
+      });
+    }
+
+    module._lastCollection(add, lastCollection);
+  }
+
+  /**
+   * Register for msgClass to receive package updates and deliver them
+   * @param {*} module
+   */
+  static registerDelivery(module) {
+    module._on(DELIVERY, msg => {
+      const mod = module;
+      mod._delivery(msg);
+    });
+    // todo: handle unregister
+  }
+}
+
+/**
  * PostalWorker Post Messenger Event Bus Module (ES6)
  * @description: Listen for and broadcast out messages by "message class"
  * between windows/tabs & web workers using the postMessage API
@@ -6,29 +283,24 @@
  * @Contributors: Sakshi Dheer, & François Wauquier
  */
 
-import * as S from "./strings";
-import Deprecated from "./Deprecated";
-import { PostalHelper } from "./PostalHelper";
-
-let // Private registrations
-  _config = false,
-  _stringify,
-  _worker = false,
-  _parentWindow = false,
-  _subscriptions = new Set(),
-  _events = new Map(),
-  _crossEvents = new Map(),
-  _openingWindows = new Map(),
-  _windows = new Map(),
-  _broadcastNetwork = new Set(),
-  _channel = new BroadcastChannel(S.POSTAL_WORKER),
-  _queue = [],
-  _POboxes = new Map(),
-  _closures = new Map(),
-  _packages = new Map();
+let _config = false;
+let _stringify;
+let _worker = false;
+let _parentWindow = false;
+let _subscriptions = new Set();
+let _events = new Map();
+let _crossEvents = new Map();
+let _openingWindows = new Map();
+let _windows = new Map();
+let _broadcastNetwork = new Set();
+let _channel = new BroadcastChannel(POSTAL_WORKER);
+let _queue = [];
+let _POboxes = new Map();
+let _closures = new Map();
+let _packages = new Map();
 
 // Define the PostalWorker
-export class PostalWorker {
+class PostalWorker {
   /**
    * Initialize object with configuration & setup the worker and listeners
    * @param configuration
@@ -56,11 +328,11 @@ export class PostalWorker {
       // and let it know this window is ready to receive messages
       PostalHelper.backMethod(this);
       _parentWindow = this._getSubscriber(document.referrer);
-      this._backFire(S.CHILDREGISTER);
+      this._backFire(CHILDREGISTER);
     }
 
     // Add event listener to incoming messages (from windows) and process with messageController
-    window.addEventListener(S.MESSAGE, this._messageController);
+    window.addEventListener(MESSAGE, this._messageController);
     // Subscribe to internal message classes
     PostalHelper.internalSubscriptions(this);
 
@@ -124,8 +396,8 @@ export class PostalWorker {
 
     try {
       worker = new SharedWorker(
-        route.concat(S.POSTAL_SHARED_WORKER).concat(".").concat(S.JS),
-        S.POSTAL_WORKER
+        route.concat(POSTAL_SHARED_WORKER).concat(".").concat(JS),
+        POSTAL_WORKER
       );
 
       /* !!! DEPRECATED messaging route !!! but leaving in place as fallback for older browsers */
@@ -134,7 +406,7 @@ export class PostalWorker {
       // but leaving it in to polyfill older browsers potentially
       let OK = _stringify({
         postal: true,
-        type: S.RESPONSE,
+        type: RESPONSE,
         id: this.id,
         status: true
       });
@@ -146,7 +418,7 @@ export class PostalWorker {
         const data = JSON.parse(event.data);
         if (data.postal !== true) return; // Not a postalWorker message
         switch (data.type) {
-          case S.WORKERREGISTER:
+          case WORKERREGISTER:
             // worker startup
             this.workerOnline = true;
 
@@ -160,12 +432,12 @@ export class PostalWorker {
             }
 
             break;
-          case S.FIRE:
+          case FIRE:
             if (data.data.msgClass && _events.get(data.data.msgClass)) {
               _events.get(data.data.msgClass)(data.data.message /*, event*/);
             }
             break;
-          case S.ERROR:
+          case ERROR:
             console.error(data.data);
             break;
           // default:
@@ -200,10 +472,10 @@ export class PostalWorker {
    * @private
    */
   _getPostalRoute() {
-    let script = Array.from(document.querySelectorAll(S.SCRIPT))
+    let script = Array.from(document.querySelectorAll(SCRIPT))
       .filter(s => {
         if (s.src) {
-          return s.src.match(S.POSTAL_WORKER);
+          return s.src.match(POSTAL_WORKER);
         } else return [];
       })
       .filter(f => f !== null);
@@ -255,7 +527,7 @@ export class PostalWorker {
     if (!msg.postal || msg.postal !== true) return; // Not a postalWorker message
     // console.info(msg);
     switch (msg.type) {
-      case S.CROSSFIRE:
+      case CROSSFIRE:
         // Is this a parent we don't yet know about?
         if (!_windows.has(msg.id)) {
           _windows.set(msg.id, { win: e.source, subscriber: e.origin });
@@ -272,9 +544,9 @@ export class PostalWorker {
         }
         break;
 
-      case S.BACKFIRE:
+      case BACKFIRE:
         // Children register themselves with the parent
-        if (msg.data.msgClass === S.CHILDREGISTER) {
+        if (msg.data.msgClass === CHILDREGISTER) {
           if (!_windows.has(msg.data.id)) {
             // if (!_windows.has(e.source)) {
             _windows.set(msg.id, { win: e.source, subscriber: e.origin }); //_windows.set(e.source, e.origin);
@@ -295,7 +567,7 @@ export class PostalWorker {
         }
         break;
 
-      case S.ERROR:
+      case ERROR:
         window.console.error(msg.data.message);
         break;
 
@@ -319,7 +591,7 @@ export class PostalWorker {
       // Send message to worker thread
       let msg_ = _stringify({
         postal: true,
-        type: S.ON,
+        type: ON,
         id: this.id,
         data: {
           msgClass: msgClass,
@@ -346,7 +618,7 @@ export class PostalWorker {
       // Send message to worker thread
       let msg_ = _stringify({
         postal: true,
-        type: S.UN,
+        type: UN,
         id: this.id,
         data: msgClass
       });
@@ -371,7 +643,7 @@ export class PostalWorker {
   _fire(msgClass, msg, audience) {
     let msg_ = _stringify({
       postal: true,
-      type: S.FIRE,
+      type: FIRE,
       id: this.id,
       data: {
         msgClass: msgClass,
@@ -420,7 +692,7 @@ export class PostalWorker {
       }
 
       // Open window for subscription
-      winName = name || S._BLANK;
+      winName = name || _BLANK;
 
       if (windowparams) {
         for (const param of Object.entries(windowparams)) {
@@ -501,7 +773,7 @@ export class PostalWorker {
   _crossFire(msgClass, msg) {
     let msg_ = _stringify({
       postal: true,
-      type: S.CROSSFIRE,
+      type: CROSSFIRE,
       id: this.id,
       data: {
         msgClass: msgClass,
@@ -549,7 +821,7 @@ export class PostalWorker {
     if (_parentWindow && msgClass) {
       let msg_ = _stringify({
         postal: true,
-        type: S.BACKFIRE,
+        type: BACKFIRE,
         id: this.id,
         data: {
           msgClass: msgClass,
@@ -579,7 +851,7 @@ export class PostalWorker {
   _load(library) {
     const msg = _stringify({
       postal: true,
-      type: S.LOAD,
+      type: LOAD,
       id: this.id,
       data: library
     });
@@ -676,9 +948,9 @@ export class PostalWorker {
     _channel.postMessage(
       _stringify({
         postal: true,
-        type: S.REGISTERID,
+        type: REGISTERID,
         id: id,
-        nodeType: S.CROSSNODE
+        nodeType: CROSSNODE
       })
     );
   }
@@ -692,7 +964,7 @@ export class PostalWorker {
     _channel.postMessage(
       _stringify({
         postal: true,
-        type: S.UNREGISTERID,
+        type: UNREGISTERID,
         id: id
       })
     );
@@ -707,9 +979,9 @@ export class PostalWorker {
     _channel.postMessage(
       _stringify({
         postal: true,
-        type: S.REGISTERID,
+        type: REGISTERID,
         id: id,
-        nodeType: S.BROADCASTNODE
+        nodeType: BROADCASTNODE
       })
     );
   }
@@ -723,7 +995,7 @@ export class PostalWorker {
     _channel.postMessage(
       _stringify({
         postal: true,
-        type: S.UNREGISTERID,
+        type: UNREGISTERID,
         id: id
       })
     );
@@ -737,7 +1009,7 @@ export class PostalWorker {
   _postBox(address, handler) {
     const msg = _stringify({
       postal: true,
-      type: S.POBOX,
+      type: POBOX,
       id: this.id,
       address: address
     });
@@ -768,7 +1040,7 @@ export class PostalWorker {
     _channel.postMessage(
       _stringify({
         postal: true,
-        type: S.CLOSEBOX,
+        type: CLOSEBOX,
         id: this.id,
         address: address
       })
@@ -787,7 +1059,7 @@ export class PostalWorker {
   _post(address, value) {
     const msg = _stringify({
       postal: true,
-      type: S.POST,
+      type: POST,
       id: this.id,
       address: address,
       value: value
@@ -845,7 +1117,7 @@ export class PostalWorker {
   _package(address, handling) {
     const msg = _stringify({
       postal: true,
-      type: S.PACKAGE,
+      type: PACKAGE,
       id: this.id,
       address: address
     });
@@ -876,7 +1148,7 @@ export class PostalWorker {
       reader.onloadend = function () {
         const msg = _stringify({
           postal: true,
-          type: S.PACK,
+          type: PACK,
           id: me.id,
           address: address,
           content: reader.result
@@ -906,3 +1178,89 @@ export class PostalWorker {
     if (pk) pk({ address, content });
   }
 }
+
+var hasProp = Object.prototype.hasOwnProperty;
+
+function throwsMessage(err) {
+	return '[Throws: ' + (err ? err.message : '?') + ']';
+}
+
+function safeGetValueFromPropertyOnObject(obj, property) {
+	if (hasProp.call(obj, property)) {
+		try {
+			return obj[property];
+		}
+		catch (err) {
+			return throwsMessage(err);
+		}
+	}
+
+	return obj[property];
+}
+
+function ensureProperties(obj) {
+	var seen = [ ]; // store references to objects we have seen before
+
+	function visit(obj) {
+		if (obj === null || typeof obj !== 'object') {
+			return obj;
+		}
+
+		if (seen.indexOf(obj) !== -1) {
+			return '[Circular]';
+		}
+		seen.push(obj);
+
+		if (typeof obj.toJSON === 'function') {
+			try {
+				var fResult = visit(obj.toJSON());
+				seen.pop();
+				return fResult;
+			} catch(err) {
+				return throwsMessage(err);
+			}
+		}
+
+		if (Array.isArray(obj)) {
+			var aResult = obj.map(visit);
+			seen.pop();
+			return aResult;
+		}
+
+		var result = Object.keys(obj).reduce(function(result, prop) {
+			// prevent faulty defined getter properties
+			result[prop] = visit(safeGetValueFromPropertyOnObject(obj, prop));
+			return result;
+		}, {});
+		seen.pop();
+		return result;
+	}
+
+	return visit(obj);
+}
+
+var index = function(data, replacer, space) {
+	return JSON.stringify(ensureProperties(data), replacer, space);
+};
+
+var ensureProperties_1 = ensureProperties;
+
+index.ensureProperties = ensureProperties_1;
+
+/**
+ * PostalWorker Main Source (ES6 Version - Exports )
+ * Build ES6 module version
+ * @Author: Russ Stratfull - 2018
+ */
+
+
+let _PostalWorker;
+function main (configuration) {
+    if (!_PostalWorker) {
+        _PostalWorker = new PostalWorker(configuration, index);
+        return _PostalWorker;
+    }
+    else return _PostalWorker;
+}
+
+export default main;
