@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
-import PostalWorker from "./PostalWorker.es";
-// import "./App.css";
+import usePostalWorker from "./usePostalWorker";
+
 function App() {
-  const postal = PostalWorker({
-    PostalRoute: "./"
-  });
+  const postal = usePostalWorker();
 
   const [test, setTest] = useState(null);
-  // postal.postBox("test", update => setTest(update));
 
   useEffect(() => {
     postal.postBox("test", update => setTest(update.value));
