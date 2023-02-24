@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
 import PostalWorker from "./PostalWorker.es";
 
-export default () => {
+const usePostalWorker = () => {
   const postal = PostalWorker({
     PostalRoute: "./"
   });
   return postal;
 };
+
+export default usePostalWorker;
