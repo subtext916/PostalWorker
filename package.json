@@ -9,6 +9,7 @@
     "dist/PostalWorker.min.js",
     "dist/PostalSharedWorker.js"
   ],
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c rollup.es.config.js && rollup -c rollup.min.config.js",
     "build-worker": "rollup -c rollup.worker.config.js",

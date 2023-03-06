@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import usePostalWorker from "./usePostalWorker";
 
 function App() {
-  const postal = usePostalWorker();
+  const postal = usePostalWorker({
+    PostalRoute: "./"
+  });
 
   const [test, setTest] = useState(null);
   const [serializedStore, setSerializedStore] = useState("{}");

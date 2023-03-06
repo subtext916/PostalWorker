@@ -24,6 +24,17 @@ export default {
     }),
     commonjs(),
     babel(babelrc()),
-    uglify()
+    uglify({
+      output: {
+        comments: function () {
+          return "/* eslint-disable */";
+        }
+      }
+    }),
+    {
+      banner() {
+        return "/* eslint-disable */";
+      }
+    }
   ]
 };
