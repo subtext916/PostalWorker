@@ -1,5 +1,5 @@
 {
-  "name": "postalworker",
+  "name": "postalworker-es",
   "version": "4.0.0",
   "description": "A JavaScript WebWorker & postMessage library that connects UI elements, Web Workers, & Cross-Site Windows",
   "main": "index.js",
@@ -23,7 +23,8 @@
     "_demo-workerstuff": "rollup -c ./demos/workerstuff/rollupconfig.js",
     "_demo-react": "cp dist/PostalWorker.es.js demos/react/src/ && cp dist/PostalSharedWorker.js demos/react/public/",
     "release": "npm run build && npm run build-worker && npm run coverage && npm run doc && npm run demos",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "start": "node server.js"
   },
   "devDependencies": {
     "babel-plugin-istanbul": "^4.0.0",
@@ -82,5 +83,8 @@
     "url": "https://github.com/subtext916/PostalWorker/issues"
   },
   "homepage": "https://github.com/subtext916/PostalWorker#readme",
-  "type": "module"
+  "type": "module",
+  "directories": {
+    "test": "test"
+  }
 }
