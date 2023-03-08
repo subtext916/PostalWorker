@@ -219,7 +219,7 @@ export class PostalWorker {
       return _config.PostalRoute;
     }
     // If PostalRoute is defined in the url, parse it and use it
-    else if (script[0].src.match("PostalRoute")) {
+    else if (script[0] && script[0].src && script[0].src.match("PostalRoute")) {
       let query = script[0].src.match(/PostalRoute=.*&/)
         ? script[0].src.match(/PostalRoute=.*&/)[0].replace("&", "")
         : script[0].src.match(/PostalRoute=.*$/)[0];
