@@ -146,7 +146,7 @@ function _postBox(msg) {
   for (const [key, bx] of Object.entries(_env._postBoxes)) {
     if (key === address && bx.handlers.length) {
       bx.handlers.forEach(handler => {
-        handler({ address, value, box });
+        if (handler) handler({ address, value, box });
       });
     }
   }
@@ -185,10 +185,6 @@ function _preparePackage(msg, callback) {
   if (pack) {
     if (!pack.members.includes(id)) pack.members.push(id);
     if (!pack.handlers.length) pack.handlers.push(callback);
-    console.info({
-      address: address,
-      content: pack.content
-    });
   } else
     _env._packages[address] = {
       members: [id],
