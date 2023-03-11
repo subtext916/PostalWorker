@@ -141,6 +141,7 @@
     <store-example></store-example>
     <!-- <img src="../../postalworker2.png" /> -->
     <img src="./loading-gif.gif" id="cacheImage" />
+    <img src="./loading-gif.gif" id="cacheImage2" />
     <div id="demoView"></div>
   </body>
   <script>
@@ -209,5 +210,8 @@
     // setTimeout(() => {
     //   window.PostalWorker().pack("package", "../../postalworker2.png");
     // }, 1000);
+    postal.package("remotePackage", content => {
+      document.querySelector("#cacheImage2").src = content.content;
+    });
   </script>
 </html>

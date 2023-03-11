@@ -125,7 +125,7 @@ export class PostalWorker {
     try {
       worker = new SharedWorker(
         route.concat(S.POSTAL_SHARED_WORKER).concat(".").concat(S.JS),
-        S.POSTAL_WORKER
+        { name: S.POSTAL_WORKER } // , type: "module"
       );
 
       /* !!! DEPRECATED messaging route !!! but leaving in place as fallback for older browsers */
