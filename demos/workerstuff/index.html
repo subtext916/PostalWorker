@@ -204,9 +204,11 @@
 
     // Demo package handling
     postal.package("package", content => {
-      document.querySelector("#cacheImage").src = content.content;
+      if (content.content === null)
+        postal.pack("package", "../../postalworker2.png");
+      else document.querySelector("#cacheImage").src = content.content;
     });
-    postal.pack("package", "../../postalworker2.png");
+
     // setTimeout(() => {
     //   window.PostalWorker().pack("package", "../../postalworker2.png");
     // }, 1000);

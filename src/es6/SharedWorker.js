@@ -197,6 +197,11 @@ function _preparePackage(msg, callback) {
       address: address,
       content: _env._packages[address].content
     });
+  else
+    PostalWorker().fire(S.DELIVERY, {
+      address: address,
+      content: null
+    });
 }
 
 /**
