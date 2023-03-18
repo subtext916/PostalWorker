@@ -86,6 +86,8 @@ static registerDelivery(e){e._on(DELIVERY,s=>{const t=e;t._delivery(s)})}}/**
  * @Author: Russ Stratfull
  * @Contributors: Sakshi Dheer, & François Wauquier
  */
+// todo: Research how to implement this polyfill: https://github.com/okikio/sharedworker
+// import SharedWorkerPolyfill from "./SharedWorkerPolyfill";
 let _config=!1,_stringify,_worker=!1,_parentWindow=!1,_subscriptions=new Set,_events=new Map,_crossEvents=new Map,_openingWindows=new Map,_windows=new Map,_broadcastNetwork=new Set,_channel=new BroadcastChannel(POSTAL_WORKER),_queue=[],_POboxes=new Map,_closures=new Map,_packages=new Map;
 // Define the PostalWorker
 class PostalWorker{/**
@@ -124,13 +126,13 @@ _getSubscriber(e){let s=e.split("://"),t=s[0];if(void 0!==s[1]){let e=s[1].split
 _resolveWorker(){
 // Browser supports SharedWorker
 let e=!!window.SharedWorker;
-// Fallback on failure
+// Polyfill on failure
 return e=Boolean(e),e?(_worker=this._startSharedWorker())||(_worker=this._startDedicatedWorker()):_worker=this._startDedicatedWorker(),_worker}/**
    * Attempt to start SharedWorker thread or fail and return false
    * @return {SharedWorker | boolean}
    * @private
    */
-_startSharedWorker(){let e,s=this._getPostalRoute();try{e=new SharedWorker(s.concat("PostalSharedWorker").concat(".").concat(JS),POSTAL_WORKER);/* !!! DEPRECATED messaging route !!! but leaving in place as fallback for older browsers */
+_startSharedWorker(){let e,s=this._getPostalRoute();try{e=new SharedWorker(s.concat("PostalSharedWorker").concat(".").concat(JS),{name:POSTAL_WORKER});/* !!! DEPRECATED messaging route !!! but leaving in place as fallback for older browsers */
 // this stuff is no longer tested and does not work
 // (no more messaging, only the connection is being established here)
 // but leaving it in to polyfill older browsers potentially
@@ -158,7 +160,7 @@ _startDedicatedWorker(){window.console.info("_startDedicatedWorker... (not compl
 _getPostalRoute(){let e=Array.from(document.querySelectorAll(SCRIPT)).filter(e=>e.src?e.src.match(POSTAL_WORKER):[]).filter(e=>null!==e);if(
 // What about if more than one postalworker is found?
 // This should be pointed out...
-e.length>1&&window.console.warn('PostalWorker - Discovered more than 1 script tag matching "PostalWorker"'),_config.PostalRoute)return _config.PostalRoute;if(e[0].src.match("PostalRoute")){let s=e[0].src.match(/PostalRoute=.*&/)?e[0].src.match(/PostalRoute=.*&/)[0].replace("&",""):e[0].src.match(/PostalRoute=.*$/)[0];return s.match("PostalRoute=.*$")[0].replace("PostalRoute=","")}
+e.length>1&&window.console.warn('PostalWorker - Discovered more than 1 script tag matching "PostalWorker"'),_config.PostalRoute)return _config.PostalRoute;if(e[0]&&e[0].src&&e[0].src.match("PostalRoute")){let s=e[0].src.match(/PostalRoute=.*&/)?e[0].src.match(/PostalRoute=.*&/)[0].replace("&",""):e[0].src.match(/PostalRoute=.*$/)[0];return s.match("PostalRoute=.*$")[0].replace("PostalRoute=","")}
 // Otherwise, look next to where the PostalWorker script is located
 return 1===e.length?e[0].src.replace(/PostalWorker\.min\.js.*$/,"").replace(/PostalWorker\.js.*$/,""):""}/**
    * Process window messaging events "data" by "type"
