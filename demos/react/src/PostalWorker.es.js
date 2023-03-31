@@ -6,7 +6,7 @@
 function throwsMessage(e){return"[Throws: "+(e?e.message:"?")+"]"}function safeGetValueFromPropertyOnObject(e,s){if(hasProp.call(e,s))try{return e[s]}catch(e){return throwsMessage(e)}return e[s]}function ensureProperties(e){// store references to objects we have seen before
 function s(e){if(null===e||"object"!=typeof e)return e;if(-1!==t.indexOf(e))return"[Circular]";if(t.push(e),"function"==typeof e.toJSON)try{var n=s(e.toJSON());return t.pop(),n}catch(e){return throwsMessage(e)}if(Array.isArray(e)){var o=e.map(s);return t.pop(),o}var r=Object.keys(e).reduce(function(t,n){
 // prevent faulty defined getter properties
-return t[n]=s(safeGetValueFromPropertyOnObject(e,n)),t},{});return t.pop(),r}var t=[];return s(e)}function main(e){return _PostalWorker||(_PostalWorker=new PostalWorker(e,index))}const POSTAL_WORKER="PostalWorker",POSTAL_SHARED_WORKER="PostalSharedWorker",ON="ON",UN="UN",FIRE="FIRE",CROSSFIRE="CROSSFIRE",BACKFIRE="BACKFIRE",CHILDREGISTER="CHILDREGISTER",WORKERREGISTER="WORKERREGISTER",REGISTERID="REGISTERID",UNREGISTERID="UNREGISTERID",BROADCASTNODE="BROADCASTNODE",CROSSNODE="CROSSNODE",ERROR="ERROR",MESSAGE="message",SCRIPT="script",JS="js",LOAD="LOAD",RESPONSE="RESPONSE",SET_ADDRESS="SET_ADDRESS",CONNECT="CONNECT",DISCONNECT="DISCONNECT",POBOX="POBOX",POST="POST",COLLECT="COLLECT",CLOSEBOX="CLOSEBOX",BOXCLOSED="BOXCLOSED",PACKAGE="PACKAGE",PACK="PACK",DELIVERY="DELIVERY",_BLANK="_blank";class Deprecated{static registerWorker(e,s,t,n){e.port.onmessage=(e=>{
+return t[n]=s(safeGetValueFromPropertyOnObject(e,n)),t},{});return t.pop(),r}var t=[];return s(e)}function main(e){return _PostalWorker||(_PostalWorker=new PostalWorker(e,index))}const POSTAL_WORKER="PostalWorker",POSTAL_SHARED_WORKER="PostalSharedWorker",POLYFILL_SHARED_WORKER="PolyfillSharedWorker",ON="ON",UN="UN",FIRE="FIRE",CROSSFIRE="CROSSFIRE",BACKFIRE="BACKFIRE",CHILDREGISTER="CHILDREGISTER",WORKERREGISTER="WORKERREGISTER",REGISTERID="REGISTERID",UNREGISTERID="UNREGISTERID",BROADCASTNODE="BROADCASTNODE",CROSSNODE="CROSSNODE",ERROR="ERROR",MESSAGE="message",SCRIPT="script",JS="js",LOAD="LOAD",RESPONSE="RESPONSE",SET_ADDRESS="SET_ADDRESS",CONNECT="CONNECT",DISCONNECT="DISCONNECT",POBOX="POBOX",POST="POST",COLLECT="COLLECT",CLOSEBOX="CLOSEBOX",BOXCLOSED="BOXCLOSED",PACKAGE="PACKAGE",PACK="PACK",DELIVERY="DELIVERY",_BLANK="_blank";class Deprecated{static registerWorker(e,s,t,n){e.port.onmessage=(e=>{
 // Handle messages sent from worker by type
 switch(e.data.type){case FIRE:// If the legacy messaging is used, it will still work here
 // Send the message
@@ -86,8 +86,6 @@ static registerDelivery(e){e._on(DELIVERY,s=>{const t=e;t._delivery(s)})}}/**
  * @Author: Russ Stratfull
  * @Contributors: Sakshi Dheer, & François Wauquier
  */
-// todo: Research how to implement this polyfill: https://github.com/okikio/sharedworker
-// import SharedWorkerPolyfill from "./SharedWorkerPolyfill";
 let _config=!1,_stringify,_worker=!1,_parentWindow=!1,_subscriptions=new Set,_events=new Map,_crossEvents=new Map,_openingWindows=new Map,_windows=new Map,_broadcastNetwork=new Set,_channel=new BroadcastChannel(POSTAL_WORKER),_queue=[],_POboxes=new Map,_closures=new Map,_packages=new Map;
 // Define the PostalWorker
 class PostalWorker{/**
@@ -95,7 +93,7 @@ class PostalWorker{/**
    * @param configuration
    * @param safeJsonStringify
    */
-constructor(e,s){this.uniqueNumber=0,this.id=this._uniqueNumber(),this.workerOnline=!1,_config=e||!1,_stringify=s,
+constructor(e,s){this.uniqueNumber=0,this.id=this._uniqueNumber(),this.sharedWorkerSupported=!1,this.workerOnline=!1,_config=e||!1,_stringify=s,
 // Public API
 PostalHelper.rootMethods(this),PostalHelper.utilityMethods(this),
 // Attach global handlers
@@ -126,8 +124,10 @@ _getSubscriber(e){let s=e.split("://"),t=s[0];if(void 0!==s[1]){let e=s[1].split
 _resolveWorker(){
 // Browser supports SharedWorker
 let e=!!window.SharedWorker;
-// Polyfill on failure
-return e=Boolean(e),e?(_worker=this._startSharedWorker())||(_worker=this._startDedicatedWorker()):_worker=this._startDedicatedWorker(),_worker}/**
+// TMP to work on dedicated worker
+// _worker = this._polyfillSharedWorker();
+// Fallback on failure
+return e=Boolean(e),e?(this.sharedWorkerSupported=!0,(_worker=this._startSharedWorker())||(_worker=this._polyfillSharedWorker())):(this.sharedWorkerSupported=!1,_worker=this._polyfillSharedWorker()),_worker}/**
    * Attempt to start SharedWorker thread or fail and return false
    * @return {SharedWorker | boolean}
    * @private
@@ -148,7 +148,27 @@ window.console.warn("PostalWorker - Unable to start SharedWorker"),window.consol
    * Start a basic web worker (not available at this time)
    * @private
    */
-_startDedicatedWorker(){window.console.info("_startDedicatedWorker... (not complete)")}/**
+_polyfillSharedWorker(){let e,s=this._getPostalRoute();try{e=new Worker(s.concat("PolyfillSharedWorker").concat(".").concat(JS),{name:POSTAL_WORKER}),
+// /* !!! DEPRECATED messaging route !!! but leaving in place as fallback for older browsers */
+// // this stuff is no longer tested and does not work
+// // (no more messaging, only the connection is being established here)
+// // but leaving it in to polyfill older browsers potentially
+// let OK = _stringify({
+//   postal: true,
+//   type: S.RESPONSE,
+//   id: this.id,
+//   status: true
+// });
+// Deprecated.registerWorker(worker, OK, _events, this);
+// /* !!! PRIMARY messaging - This should always be used first */
+_channel.onmessage=(e=>{
+// Handle messages sent from worker by type
+const s=JSON.parse(e.data);if(!0!==s.postal)return;// Not a postalWorker message
+switch(s.type){case WORKERREGISTER:if(
+// worker startup
+this.workerOnline=!0,this._mapToBroadcastNetwork(this.id),_queue.length){const e=()=>_queue.length;for(;e();)_queue.shift()()}break;case FIRE:s.data.msgClass&&_events.get(s.data.msgClass)&&_events.get(s.data.msgClass)(s.data.message);break;case ERROR:console.error(s.data)}})}catch(e){
+// todo: Add intelligent error handling, including destination options
+window.console.warn("PostalWorker - Unable to start SharedWorker"),window.console.debug(e)}return e||!1}/**
    * Resolve route to use to find the sharedworker file
    * Priority is:
    * 1. Configuration passed to library

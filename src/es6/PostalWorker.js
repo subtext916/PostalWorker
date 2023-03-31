@@ -905,7 +905,6 @@ export class PostalWorker {
   /**
    *
    * @param {*} address
-   * @param {*} content
    * @param {*} handling
    */
   _package(address, handling) {
