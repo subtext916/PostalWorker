@@ -100,14 +100,13 @@ export class PostalWorker {
     sh = Boolean(sh);
     if (sh) {
       this.sharedWorkerSupported = true;
-      _worker = this._polyfillSharedWorker();
+      // _worker = this._polyfillSharedWorker();
 
-      // // todo: original route to sharedworker
-      // _worker = this._startSharedWorker();
-      // if (!_worker) {
-      //   // Fallback on failure
-      //   _worker = this._startDedicatedWorker();
-      // }
+      _worker = this._startSharedWorker();
+      if (!_worker) {
+        // Fallback on failure
+        _worker = this._polyfillSharedWorker();
+      }
     }
 
     // Use plain web worker
@@ -200,8 +199,6 @@ export class PostalWorker {
         route.concat(S.POLYFILL_SHARED_WORKER).concat(".").concat(S.JS),
         { name: S.POSTAL_WORKER } // , type: "module"
       );
-
-      console.info(worker);
 
       // /* !!! DEPRECATED messaging route !!! but leaving in place as fallback for older browsers */
       // // this stuff is no longer tested and does not work
