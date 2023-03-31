@@ -5,6 +5,7 @@
 export const // All the strings...
   POSTAL_WORKER = "PostalWorker",
   POSTAL_SHARED_WORKER = "PostalSharedWorker",
+  POLYFILL_SHARED_WORKER = "PolyfillSharedWorker",
   ON = "ON",
   UN = "UN",
   FIRE = "FIRE",

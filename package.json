@@ -12,7 +12,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c rollup.es.config.js && rollup -c rollup.min.config.js",
-    "build-worker": "rollup -c rollup.worker.config.js",
+    "build-worker": "rollup -c rollup.worker.config.js && rollup -c rollup.polyfill.config.js",
     "_transpile-test": "rollup -c rollup.test.js",
     "test": "npm run _transpile-test && mocha",
     "coverage": "cross-env NODE_ENV=test nyc npm test",

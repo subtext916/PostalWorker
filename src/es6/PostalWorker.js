@@ -38,6 +38,7 @@ export class PostalWorker {
     this.uniqueNumber = 0;
 
     this.id = this._uniqueNumber();
+    this.sharedWorkerSupported = false;
     this.workerOnline = false;
 
     _config = configuration || false;
@@ -98,16 +99,21 @@ export class PostalWorker {
     let sh = !!window.SharedWorker;
     sh = Boolean(sh);
     if (sh) {
-      _worker = this._startSharedWorker();
-      if (!_worker) {
-        // Fallback on failure
-        _worker = this._startDedicatedWorker();
-      }
+      this.sharedWorkerSupported = true;
+      _worker = this._polyfillSharedWorker();
+
+      // // todo: original route to sharedworker
+      // _worker = this._startSharedWorker();
+      // if (!_worker) {
+      //   // Fallback on failure
+      //   _worker = this._startDedicatedWorker();
+      // }
     }
 
     // Use plain web worker
     else {
-      _worker = this._startDedicatedWorker();
+      this.sharedWorkerSupported = false;
+      _worker = this._polyfillSharedWorker();
     }
 
     return _worker;
@@ -186,8 +192,69 @@ export class PostalWorker {
    * Start a basic web worker (not available at this time)
    * @private
    */
-  _startDedicatedWorker() {
-    window.console.info("_startDedicatedWorker... (not complete)");
+  _polyfillSharedWorker() {
+    let worker,
+      route = this._getPostalRoute();
+    try {
+      worker = new Worker(
+        route.concat(S.POLYFILL_SHARED_WORKER).concat(".").concat(S.JS),
+        { name: S.POSTAL_WORKER } // , type: "module"
+      );
+
+      console.info(worker);
+
+      // /* !!! DEPRECATED messaging route !!! but leaving in place as fallback for older browsers */
+      // // this stuff is no longer tested and does not work
+      // // (no more messaging, only the connection is being established here)
+      // // but leaving it in to polyfill older browsers potentially
+      // let OK = _stringify({
+      //   postal: true,
+      //   type: S.RESPONSE,
+      //   id: this.id,
+      //   status: true
+      // });
+      // Deprecated.registerWorker(worker, OK, _events, this);
+
+      // /* !!! PRIMARY messaging - This should always be used first */
+      _channel.onmessage = event => {
+        // Handle messages sent from worker by type
+        const data = JSON.parse(event.data);
+        if (data.postal !== true) return; // Not a postalWorker message
+        switch (data.type) {
+          case S.WORKERREGISTER:
+            // worker startup
+            this.workerOnline = true;
+
+            this._mapToBroadcastNetwork(this.id);
+
+            if (_queue.length) {
+              const getLength = () => _queue.length;
+              while (getLength()) {
+                _queue.shift()();
+              }
+            }
+
+            break;
+          case S.FIRE:
+            if (data.data.msgClass && _events.get(data.data.msgClass)) {
+              _events.get(data.data.msgClass)(data.data.message /*, event*/);
+            }
+            break;
+          case S.ERROR:
+            console.error(data.data);
+            break;
+          // default:
+          //   console.warn(event);
+        }
+      };
+    } catch (e) {
+      // todo: Add intelligent error handling, including destination options
+      window.console.warn(
+        "PostalWorker - Unable to start SharedWorker" // todo: Reverting to dedicated worker
+      );
+      window.console.debug(e);
+    }
+    return worker ? worker : false;
   }
 
   /**
