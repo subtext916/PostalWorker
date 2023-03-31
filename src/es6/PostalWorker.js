@@ -100,6 +100,8 @@ export class PostalWorker {
     sh = Boolean(sh);
     if (sh) {
       this.sharedWorkerSupported = true;
+
+      // TMP to work on dedicated worker
       // _worker = this._polyfillSharedWorker();
 
       _worker = this._startSharedWorker();
