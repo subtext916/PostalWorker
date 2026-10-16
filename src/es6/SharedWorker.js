@@ -421,7 +421,7 @@ const PostalWorker = () => ({
  * When windows connect to the worker,
  * register their source and start their messaging session
  */
-onconnect = () => {
+self.onconnect = () => {
   // New messaging method using broadcast channel
   if (!_env._channel.onmessage)
     _env._channel.onmessage = event => {

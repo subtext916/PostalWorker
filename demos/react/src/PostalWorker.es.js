@@ -388,7 +388,6 @@ _lastCollection(e,s){_closures.set(e,s)}/**
 _clearBox(e){const{id:id,address:address,box:box}=e;if(id===this.id){if(_closures.get(address)){_closures.get(address)({address:address,value:null,box:box}),_closures.delete(address)}_POboxes.delete(address),_closures.size||_POboxes.size||PostalHelper.unregisterCollection(this)}}/**
    *
    * @param {*} address
-   * @param {*} content
    * @param {*} handling
    */
 _package(e,s){const t=_stringify({postal:!0,type:PACKAGE,id:this.id,address:e});this.workerOnline?_worker&&_channel.postMessage(t):_queue.push(()=>_channel.postMessage(t)),_packages.size||PostalHelper.registerDelivery(this),_packages.get(e)||_packages.set(e,s)}/**
