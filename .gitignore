@@ -6,3 +6,4 @@ npm-debug.log
 /coverage
 /demos/react/node_modules
 /test-results
+.DS_Store
