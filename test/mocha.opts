@@ -1,3 +1,0 @@
-test/transpiled
---require ./test/imports.js
---recursive

@@ -1,60 +1,58 @@
 /**
- * Hook to implement instance of PostalWorker script
+ * React hooks for PostalWorker v5.
+ * `npm run demo:react` (in the repo root) copies the built library into ./postalworker.
  */
-import PostalWorker from "./PostalWorker.es";
-export type PostBoxItem = {
-  value: any;
-  box: any;
-};
-export type PostalWorkerType = {
-  closeBox: (address: string) => PostalWorker;
-  crossFire?: (msgClass: string, data: any) => PostalWorker;
-  crossOn?: (
-    msgClass: string,
-    action: (msg: any) => void,
-    subscriber: string,
-    name: string,
-    windowparams: {
-      popup?: boolean;
-      width?: number;
-      height?: number;
-      left?: number;
-      top?: number;
-      noopener?: boolean;
-      noreferrer?: boolean;
-      // todo: more?
-    }
-  ) => PostalWorker;
-  fire?: (msgClass: string, msg: string /*, audience*/) => PostalWorker;
-  fireAll?: (msgClass: string, msg: string) => PostalWorker;
-  id: string;
-  load?: (file: string) => PostalWorker;
-  on: (msgClass: string, action: (msg: any) => any) => PostalWorker;
-  pack: (address: string, content: string) => PostalWorker;
-  package: (
-    address: string,
-    handling: (msg: { address: string; content: any }) => any
-  ) => PostalWorker;
-  post?: (address: string, content: any) => PostalWorker;
-  postBox?: (
-    address: string,
-    callback: (item: PostBoxItem) => void
-  ) => PostalWorker;
-  sharedWorkerSupported: boolean;
-  un: (msgClass: string) => PostalWorker;
-  unCross: (msgClass: string, subscriber: string) => PostalWorker;
-  uniqueNumber: number;
-  workerOnline: boolean;
-};
-type PostalConfig = {
-  PostalRoute: string;
-};
+import { useEffect, useRef, useState } from "react";
+import {
+  createPostalWorker,
+  type BoxesOf,
+  type EventsOf,
+  type KeyOf,
+  type MessageMeta,
+  type PostalConfig,
+  type PostalWorker,
+  type Schema,
+} from "./postalworker";
 
-const usePostalWorker = (config: PostalConfig) => {
-  const postal = PostalWorker({
-    PostalRoute: config?.PostalRoute || "./"
-  });
+// One instance per tab and channel, shared by every component (and safe under StrictMode).
+const instances = new Map<string, PostalWorker<never>>();
+
+export function usePostalWorker<S extends Schema>(config: PostalConfig): PostalWorker<S> {
+  const key = config.channelName ?? "PostalWorker";
+  let postal = instances.get(key) as PostalWorker<S> | undefined;
+  if (!postal) {
+    postal = createPostalWorker<S>(config);
+    instances.set(key, postal as unknown as PostalWorker<never>);
+  }
   return postal;
-};
+}
 
-export default usePostalWorker;
+/** Subscribe to a message class for the lifetime of the component. */
+export function usePostalEvent<S extends Schema, K extends KeyOf<EventsOf<S>>>(
+  postal: PostalWorker<S>,
+  msgClass: K,
+  handler: (message: EventsOf<S>[K], meta: MessageMeta) => void,
+): void {
+  const latest = useRef(handler);
+  latest.current = handler;
+  useEffect(() => postal.on(msgClass, (m, meta) => latest.current(m, meta)), [postal, msgClass]);
+}
+
+/** Current value of a shared box (null until something is posted), plus the full box snapshot. */
+export function usePostBox<S extends Schema, K extends KeyOf<BoxesOf<S>>>(
+  postal: PostalWorker<S>,
+  address: K,
+): { value: BoxesOf<S>[K] | null; box: Partial<Record<string, unknown>> } {
+  const [state, setState] = useState<{ value: BoxesOf<S>[K] | null; box: Partial<Record<string, unknown>> }>({
+    value: null,
+    box: {},
+  });
+  useEffect(
+    () =>
+      postal.postBox(address, (item) => {
+        if (!item.closed) setState({ value: item.value, box: item.box as Partial<Record<string, unknown>> });
+      }),
+    [postal, address],
+  );
+  return state;
+}

@@ -1,89 +1,54 @@
-import React, { useEffect, useState, useCallback } from "react";
-import usePostalWorker, { PostalWorkerType } from "./usePostalWorker";
+import React, { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
+import { usePostalWorker, usePostBox } from "./usePostalWorker";
+
+/** Everything this demo sends, so the compiler checks every call. */
+type DemoSchema = {
+  boxes: { input: string; clicked: number; randomNumber: number };
+  packages: { video: Blob };
+};
 
 function App() {
-  // Get instance of postalWorker using hook
-  const postal: PostalWorkerType = usePostalWorker({
-    PostalRoute: "./"
-  });
+  const postal = usePostalWorker<DemoSchema>({ workerUrl: "./PostalSharedWorker.js" });
 
-  // Set some component states
-  const [inputState, setInputState] = useState("");
-  const [clicked, setClicked] = useState(0);
-  const [serializedStore, setSerializedStore] = useState("{}");
-  const [video, setVideo] = useState(null);
+  const input = usePostBox(postal, "input");
+  const clicked = usePostBox(postal, "clicked");
+  // updated inside the worker, see ../public/workerSubscribeDemo.js
+  const random = usePostBox(postal, "randomNumber");
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-  // When the component is initialized the first time
-  useEffect(() => {
-    console.info(postal);
-    // Register postbox for input
-    postal.postBox("input", update => {
-      setInputState(update.value || undefined);
-      setSerializedStore(JSON.stringify(update.box));
-    });
-    // Register postbox for button clicks
-    postal.postBox("clicked", click => {
-      setClicked(click.value === null ? 0 : click.value);
-      setSerializedStore(JSON.stringify(click.box));
-    });
-    // Register postbox for random number
-    // (this gets updated in the worker thread)
-    // See ../public/workerSubscribeDemo.js to see how that works
-    postal.postBox("randomNumber", msg => {
-      if (msg.value !== null) setSerializedStore(JSON.stringify(msg.box));
-    });
-    // Register postbox for video which is loaded in worker thread
-    // see ../public/videoCacheDemo.js
-    postal.package("video", msg => {
-      if (msg.content) setVideo(msg.content);
-    });
-  }, [setInputState, setClicked, setVideo, setSerializedStore, postal]);
+  // the video is fetched and packed inside the worker, see ../public/videoCacheDemo.js
+  useEffect(
+    () =>
+      postal.package("video", ({ content }) => {
+        if (content) setVideoUrl(URL.createObjectURL(content));
+      }),
+    [postal],
+  );
 
   useEffect(() => {
-    // load the worker demo script into the postal worker the firt time the postal worker loads
+    // each script loads into the worker once, however many tabs ask
     postal.load("./workerSubscribeDemo.js");
-    // load video cache demo into worker
     postal.load("./videoCacheDemo.js");
   }, [postal]);
 
-  const keyDown = useCallback(
-    e => {
-      postal.post("input", e.target.value);
-    },
-    [postal]
-  );
-
-  const clickButton = useCallback(() => {
-    const update = clicked + 1;
-    postal.post("clicked", update);
-  }, [postal, clicked]);
+  const store = JSON.stringify({ ...input.box, ...clicked.box, ...random.box });
 
   return (
     <div id="App">
       <h1>React Demo</h1>
-      <input value={inputState || undefined} onChange={keyDown} />
+      <p>Open this page in two tabs: the input, the counter and the store stay in sync.</p>
+      <input value={input.value ?? ""} onChange={(e) => postal.post("input", e.target.value)} />
       <br />
       <br />
-      <br />
-      <Button variant="contained" onClick={clickButton}>
-        Clicked {clicked} Times
+      <Button variant="contained" onClick={() => postal.post("clicked", (clicked.value ?? 0) + 1)}>
+        Clicked {clicked.value ?? 0} Times
       </Button>
       <br />
       <br />
-      <br />
-      <div id="demo">store: {serializedStore}</div>
-      {video && (
-        <video
-          style={{
-            width: "400px",
-            height: "400px"
-          }}
-          src={video}
-          autoPlay={true}
-          controls={true}
-          loop={true}
-        />
+      <div id="demo">store: {store}</div>
+      {videoUrl && (
+        <video style={{ width: "400px", height: "400px" }} src={videoUrl} autoPlay controls loop muted />
       )}
     </div>
   );
