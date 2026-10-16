@@ -170,7 +170,7 @@ function detectPostalRoute(): string {
   if (scripts.length > 1) console.warn('PostalWorker: found more than one script tag matching "PostalWorker"; using the first');
   const script = scripts[0];
   if (!script) return "";
-  const url = new URL(script.src, location.href);
+  const url = new URL(script.src, window.location.href);
   const fromQuery = url.searchParams.get("PostalRoute");
   if (fromQuery !== null) return fromQuery;
   return url.href.slice(0, url.href.length - url.pathname.length) + url.pathname.replace(/[^/]*$/, "");

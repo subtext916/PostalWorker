@@ -296,7 +296,7 @@ class PostalWorkerImpl {
   // ---- worker scripts -------------------------------------------------------
 
   load(url: string | URL): void {
-    const href = this.#inert ? String(url) : new URL(url, location.href).href;
+    const href = this.#inert ? String(url) : new URL(url, window.location.href).href;
     if (!this.#requireWorker("load()")) return;
     this.#loaded.add(href);
     this.#post({ kind: "load", url: href });
@@ -398,7 +398,7 @@ class PostalWorkerImpl {
       this.#giveUp();
       return;
     }
-    const url = new URL(workerUrl, location.href).href;
+    const url = new URL(workerUrl, window.location.href).href;
     const options: WorkerOptions = { name: this.#channelName };
 
     if (typeof SharedWorker === "function") {

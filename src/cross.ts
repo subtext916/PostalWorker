@@ -50,7 +50,7 @@ export class CrossWindows {
 
   constructor(opts: CrossWindowsOptions) {
     this.#opts = opts;
-    this.#trusted.add(location.origin);
+    this.#trusted.add(window.location.origin);
     if (opts.allowedOrigins !== "*") for (const o of opts.allowedOrigins) this.#trusted.add(normalizeOrigin(o));
 
     const parentOrigin = this.isFramed ? guessParentOrigin() : undefined;
@@ -95,7 +95,7 @@ export class CrossWindows {
 
   /** Open a window and trust it (only that window, only at that url's origin). */
   open(url: string | URL, name: string, features: string): Window | null {
-    const href = new URL(url, location.href);
+    const href = new URL(url, window.location.href);
     const win = window.open(href.href, name, features);
     if (!win) {
       console.warn(
@@ -274,7 +274,7 @@ function getOpener(): Window | null {
 
 function normalizeOrigin(urlOrOrigin: string | URL): string {
   try {
-    return new URL(urlOrOrigin, location.href).origin;
+    return new URL(urlOrOrigin, window.location.href).origin;
   } catch {
     return String(urlOrOrigin);
   }
@@ -290,7 +290,7 @@ function referrerOrigin(): string | undefined {
 }
 
 function guessParentOrigin(): string | undefined {
-  const ancestors = location.ancestorOrigins;
+  const ancestors = window.location.ancestorOrigins;
   if (ancestors && ancestors.length > 0) return ancestors[0];
   return referrerOrigin();
 }
@@ -308,7 +308,7 @@ function isChildFrameAt(win: Window, origin: string): boolean {
   for (const frame of frameElements()) {
     if (frame.contentWindow !== win) continue;
     try {
-      return new URL(frame.src, location.href).origin === origin;
+      return new URL(frame.src, window.location.href).origin === origin;
     } catch {
       return false;
     }
