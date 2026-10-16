@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>PostalWorker script tag page</title></head>
+<body>
+<script src="/dist/PostalWorker.min.js"></script>
+<script>
+  window.log = [];
+  window.PW = PostalWorker({ channelName: new URLSearchParams(location.search).get("channel") ?? "tag" });
+  PW.v5.ready().then((online) => { window.online = online; window.ready = true; });
+</script>
+</body>
+</html>

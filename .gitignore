@@ -1,11 +1,8 @@
-.idea/**
-dist/**
+.idea/
+dist/
+node_modules/
 *.bat
 npm-debug.log
-/node_modules
-/target
-/test/transpiled
-dev/**
-/.nyc_output
 /coverage
 /demos/react/node_modules
+/test-results

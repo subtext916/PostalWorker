@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>PostalWorker v4 compat page</title></head>
+<body>
+<script>window.log = []; window.errors = []; window.addEventListener("error", (e) => window.errors.push(String(e.message)));</script>
+<script type="module">
+  import PostalWorker from "/dist/index.js";
+  const params = new URLSearchParams(location.search);
+  window.PW = PostalWorker({ PostalRoute: "/dist/", channelName: params.get("channel") ?? "compat" });
+  window.PW2 = PostalWorker({ PostalRoute: "/somewhere/else/" }); // must return the same instance
+  window.online = await window.PW.v5.ready();
+  window.ready = true;
+</script>
+</body>
+</html>

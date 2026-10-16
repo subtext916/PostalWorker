@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>PostalWorker test page</title></head>
+<body>
+<script>
+  // ?nosw=1 simulates a browser without SharedWorker (fallback path)
+  const params = new URLSearchParams(location.search);
+  if (params.get("nosw")) { window.SharedWorker = undefined; }
+  window.log = [];
+  window.errors = [];
+  window.rec = (name) => (message, meta) => window.log.push({ name, message, from: meta && meta.from });
+  window.addEventListener("error", (e) => window.errors.push(String(e.message)));
+</script>
+<script type="module">
+  import { createPostalWorker } from "/dist/index.js";
+  const params = new URLSearchParams(location.search);
+  const config = {
+    workerUrl: params.get("worker") ?? "/dist/PostalSharedWorker.js",
+    channelName: params.get("channel") ?? "test",
+    onError: (e) => window.errors.push(e.message),
+  };
+  if (params.get("worker") === "none") config.workerUrl = false;
+  if (params.get("allow")) config.allowedOrigins = params.get("allow") === "*" ? "*" : params.get("allow").split(",");
+  if (params.get("timeout")) config.readyTimeout = Number(params.get("timeout"));
+  window.postal = createPostalWorker(config);
+  window.online = await window.postal.ready();
+  window.ready = true;
+</script>
+<iframe id="frame" hidden></iframe>
+</body>
+</html>
