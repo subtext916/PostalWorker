@@ -60,5 +60,8 @@
   "bugs": {
     "url": "https://github.com/subtext916/PostalWorker/issues"
   },
-  "homepage": "https://github.com/subtext916/PostalWorker#readme"
+  "homepage": "https://github.com/subtext916/PostalWorker#readme",
+  "dependencies": {
+    "http-server": "^14.1.1"
+  }
 }
