@@ -21,6 +21,9 @@ app.use(express.static(root));
 // Server instance
 const httpServer = http.createServer(app);
 const httpPort = Number(process.env.PORT) || 8081;
-httpServer.listen(httpPort, () => {
-  console.log(`server is running @ http://127.0.0.1:${httpPort}/demos/workerstuff/`);
+const httpHost = process.env.HOST || "0.0.0.0";
+httpServer.listen(httpPort, httpHost, () => {
+  console.log(
+    `server is running @ http://127.0.0.1:${httpPort}/demos/workerstuff/`
+  );
 });
