@@ -29,10 +29,11 @@ self.init = function (PostalWorker) {
     PostalWorker().fire("hover", false);
   });
 
-  // Register for server sent events...
-  // currently only available in worker
+  // Register for server sent events (one stream in the worker, shared by every tab).
+  // Same-origin path: resolves against wherever the page and worker are served from.
+  // Run `npm run demo-server` and open http://127.0.0.1:8081/demos/workerstuff/
   PostalWorker().subscribe(
-    "http://127.0.0.1:8081/eventSource",
+    "/eventSource",
     msg => {
       PostalWorker().fire("demoNotification", JSON.parse(msg.data).blah);
     },

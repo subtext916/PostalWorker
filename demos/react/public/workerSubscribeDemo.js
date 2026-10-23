@@ -11,10 +11,11 @@ self.init = function (PostalWorker) {
     randomNumber = post;
   });
 
-  // Register for server sent events...
-  // currently only available in worker
+  // Register for server sent events (one stream in the worker, shared by every tab).
+  // Same-origin path: in dev, the CRA "proxy" in package.json forwards it to the
+  // demo server (`npm run demo-server` in the repo root, port 8081).
   PostalWorker().subscribe(
-    "http://127.0.0.1:8081/eventSource",
+    "/eventSource",
     msg => {
       PostalWorker().post("randomNumber", JSON.parse(msg.data).blah);
     },
